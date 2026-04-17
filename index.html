@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Космере — порядок чтения</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0e13; --surface: #13151d; --surface2: #1a1d28;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13);
+  --text: #e8e6de; --muted: #7a7b85;
+  --accent: #c9a96e; --accent2: #8b9fc7; --warn: #c97a6e;
+  --green: #6ec9a1; --purple: #a88bc9; --gold: #c9b46e; --coll: #c9c96e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; min-height: 100vh; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; line-height: 1.6; }
+
+header { padding: 2.5rem 1.25rem 1.5rem; max-width: 860px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+.eyebrow { font-size: 10px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-bottom: 0.6rem; }
+h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.9rem, 8vw, 3.2rem); font-weight: 400; line-height: 1.1; }
+h1 em { font-style: italic; color: var(--accent); }
+.subtitle { color: var(--muted); font-size: 11px; margin-top: 0.4rem; }
+
+.controls { max-width: 860px; margin: 0 auto; }
+
+.toggle-bar {
+  padding: 1rem 1.25rem;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+}
+.toggle-label { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+.toggle-group { display: flex; background: var(--surface); border: 1px solid var(--border2); border-radius: 6px; overflow: hidden; }
+.toggle-btn {
+  padding: 7px 16px; font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--muted); background: transparent; border: none; cursor: pointer;
+  transition: background 0.2s, color 0.2s; -webkit-tap-highlight-color: transparent;
+}
+.toggle-btn.active { background: var(--accent); color: #0d0e13; font-weight: 500; }
+.mode-desc { font-size: 11px; color: var(--muted); font-style: italic; width: 100%; margin-top: -4px; }
+
+.legend {
+  padding: 0.75rem 1.25rem; display: flex; gap: 10px 16px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border); font-size: 10px; color: var(--muted); align-items: center;
+}
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; }
+
+.filter-bar { padding: 0.75rem 1.25rem; display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+.filter-chip {
+  padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border2);
+  background: transparent; color: var(--muted); font-family: 'DM Mono', monospace;
+  font-size: 11px; cursor: pointer; transition: all 0.15s; -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.filter-chip.active { border-color: var(--accent); color: var(--accent); }
+
+main { max-width: 860px; margin: 0 auto; padding: 1.25rem 1.25rem 4rem; }
+
+.planet-section { margin-bottom: 0.5rem; }
+.planet-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0.6rem 0; cursor: pointer; user-select: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.planet-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.planet-name { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.planet-line { flex: 1; height: 1px; background: var(--border); min-width: 10px; }
+.planet-arrow { font-size: 10px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+.planet-arrow.open { transform: rotate(180deg); }
+
+.books { display: flex; flex-direction: column; gap: 4px; padding-left: 16px; padding-bottom: 0.5rem; }
+.book {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 12px; border-radius: 5px;
+  border: 1px solid var(--border); background: var(--surface);
+  transition: border-color 0.15s;
+}
+.book.is-coll { border-color: rgba(201,201,110,0.3); background: rgba(201,201,110,0.04); }
+
+.book-num { font-size: 10px; color: var(--muted); min-width: 18px; margin-top: 2px; font-weight: 500; flex-shrink: 0; }
+.book-body { flex: 1; min-width: 0; }
+.book-title { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.3; word-wrap: break-word; }
+.book-meta { font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+.book-note { font-size: 11px; color: var(--warn); margin-top: 5px; padding: 4px 8px; border-left: 2px solid var(--warn); background: rgba(201,122,110,0.06); border-radius: 0 3px 3px 0; line-height: 1.5; }
+.book-tip { font-size: 11px; color: var(--accent2); margin-top: 5px; padding: 4px 8px; border-left: 2px solid var(--accent2); background: rgba(139,159,199,0.06); border-radius: 0 3px 3px 0; line-height: 1.5; }
+.book-contents { font-size: 11px; color: var(--coll); margin-top: 5px; padding: 4px 8px; border-left: 2px solid var(--coll); background: rgba(201,201,110,0.05); border-radius: 0 3px 3px 0; line-height: 1.75; }
+
+.tags { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+.tag { font-size: 10px; padding: 2px 7px; border-radius: 3px; }
+.tag-novella { background: rgba(110,201,161,0.12); color: var(--green); border: 1px solid rgba(110,201,161,0.2); }
+.tag-story { background: rgba(168,139,201,0.12); color: var(--purple); border: 1px solid rgba(168,139,201,0.2); }
+.tag-graphic { background: rgba(201,180,110,0.12); color: var(--gold); border: 1px solid rgba(201,180,110,0.2); }
+.tag-collection { background: rgba(201,201,110,0.12); color: var(--coll); border: 1px solid rgba(201,201,110,0.2); }
+
+.divider { height: 1px; background: var(--border); margin: 0.25rem 0 0.5rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Брендон Сандерсон</p>
+  <h1>Вселенная <em>Космере</em></h1>
+  <p class="subtitle">Порядок чтения · на основе данных Фантлаб и Arcanum Unbounded</p>
+</header>
+
+<div class="controls">
+  <div class="toggle-bar">
+    <span class="toggle-label">Режим:</span>
+    <div class="toggle-group">
+      <button class="toggle-btn active" id="btn-chrono">Хронология</button>
+      <button class="toggle-btn" id="btn-advice">Советы</button>
+    </div>
+    <span class="mode-desc" id="mode-desc">порядок по внутренней хронологии миров</span>
+  </div>
+
+  <div class="legend">
+    <span>Обозначения:</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>новелла</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--purple)"></span>рассказ</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--gold)"></span>граф. роман</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--coll)"></span>сборник</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--warn)"></span>примечание</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--accent2)"></span>совет</span>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-chip active" id="fc-all">Все</button>
+    <button class="filter-chip" id="fc-novel">Романы</button>
+    <button class="filter-chip" id="fc-short">Новеллы и рассказы</button>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<script>
+var TL = { novella:"новелла", story:"рассказ", graphic:"граф. роман", collection:"сборник" };
+
+var CHRONO = [
+  { planet:"Сель", color:"#6ec9a1", books:[
+    { title:"Элантрис", meta:"2005 · роман · первый роман Сандерсона", type:"novel",
+      tip:"Написан заметно слабее зрелых работ. Новичкам советуют читать после Рождённого туманом — тогда слабости дебюта не отпугивают." },
+    { title:"Надежда Элантриса", meta:"2007 · рассказ · дополнение к Элантрису", type:"short", tag:"story",
+      note:"Сцена, не вошедшая в роман. Бесплатно на сайте автора." },
+    { title:"Душа императора", meta:"2012 · повесть · мир Сель", type:"short", tag:"novella" },
+  ]},
+  { planet:"Талдаин", color:"#c9b46e", books:[
+    { title:"Белый песок т. 1–3", meta:"2016–2019 · графический роман", type:"novel", tag:"graphic" },
+  ]},
+  { planet:"Скадриаль — Эра 1 (Рождённый туманом)", color:"#8b9fc7", books:[
+    { title:"Одиннадцатый металл", meta:"2011 · рассказ · события до «Пепла и стали»", type:"short", tag:"story" },
+    { title:"Пепел и сталь", meta:"2006 · роман · Рождённый туманом #1", type:"novel" },
+    { title:"Источник вознесения", meta:"2007 · роман · Рождённый туманом #2", type:"novel" },
+    { title:"Герой веков", meta:"2008 · роман · Рождённый туманом #3", type:"novel" },
+  ]},
+  { planet:"Налтис", color:"#c98bb0", books:[
+    { title:"Убийца войн", meta:"2009 · роман · бесплатно на сайте автора", type:"novel" },
+  ]},
+  { planet:"Тренодия", color:"#888780", books:[
+    { title:"Тени Тишины в Лесах Ада", meta:"2013 · рассказ", type:"short", tag:"story" },
+  ]},
+  { planet:"Скадриаль — Эра 2 (Двурождённые)", color:"#6ec9c9", books:[
+    { title:"Сплав закона", meta:"2011 · роман · Двурождённые #1", type:"novel" },
+    { title:"Алломант Джек и ямы Эльтании", meta:"2014 · рассказ · между Двурождёнными #1 и #2", type:"short", tag:"story",
+      tip:"Юмористический газетный рассказ из мира Эры 2. Читать между «Сплавом закона» и «Тенями истины»." },
+    { title:"Тени истины", meta:"2015 · роман · Двурождённые #2", type:"novel" },
+    { title:"Браслеты скорби", meta:"2016 · роман · Двурождённые #3", type:"novel" },
+    { title:"Тайная история", meta:"2016 · повесть", type:"short", tag:"novella",
+      note:"Сандерсон советует читать после «Браслетов скорби» — спойлер к концовке. Действие параллельно книгам 2–3 Эры 1." },
+    { title:"Утраченный металл", meta:"2022 · роман · Двурождённые #4", type:"novel" },
+  ]},
+  { planet:"Дроминад", color:"#97c459", books:[
+    { title:"Шестой из сумрака", meta:"2014 · рассказ", type:"short", tag:"story",
+      note:"Читать до «Isles of the Emberdark» — входит в роман флешбеками (чётные главы 2–20)." },
+  ]},
+  { planet:"Рошар — Архив Буресвета", color:"#a88bc9", books:[
+    { title:"Путь королей", meta:"2010 · роман · Архив Буресвета #1", type:"novel" },
+    { title:"Слова сияния", meta:"2014 · роман · Архив Буресвета #2", type:"novel" },
+    { title:"Гранетанцор", meta:"2016 · новелла · между #2 и #3", type:"short", tag:"novella",
+      note:"Читать между «Словами сияния» и «Давшим клятву»." },
+    { title:"Давший клятву", meta:"2017 · роман · Архив Буресвета #3", type:"novel" },
+    { title:"Осколок зари", meta:"2020 · новелла · между #3 и #4", type:"short", tag:"novella",
+      note:"Читать между «Давшим клятву» и «Ритмом войны»." },
+    { title:"Ритм войны", meta:"2020 · роман · Архив Буресвета #4", type:"novel" },
+    { title:"Ветер и Правда", meta:"2024 · роман · Архив Буресвета #5", type:"novel" },
+  ]},
+  { planet:"Сборник «Космере. Тайная история» (Arcanum Unbounded)", color:"#c9c96e", books:[
+    { title:"Космере. Тайная история", meta:"2016 (рус. 2024) · сборник · альтернатива отдельным новеллам", type:"novel", tag:"collection", isColl:true,
+      tip:"Удобная альтернатива: заменяет все мелкие произведения. Лучшее время — после Эры 2 и перед Архивом, или после всего Архива целиком.",
+      contents:"Душа императора · Надежда Элантриса · Одиннадцатый металл · Алломант Джек · Тайная история · отрывок Белый песок · Тени Тишины · Шестой из сумрака · Гранетанцор\n+ очерки о каждой планете от лица Крисс" },
+  ]},
+  { planet:"Лумар", color:"#5dcaa5", books:[
+    { title:"Локон с Изумрудного моря", meta:"2023 · роман · «Секретный проект»", type:"novel" },
+  ]},
+  { planet:"Комаси", color:"#d4537e", books:[
+    { title:"Юми и укротитель кошмаров", meta:"2023 · роман · «Секретный проект»", type:"novel" },
+  ]},
+  { planet:"Песнопение", color:"#c9a96e", books:[
+    { title:"Озарённый Солнцем", meta:"2023 · роман · читать после Архива #5", type:"novel",
+      tip:"Тесно связан с событиями «Архива Буресвета». Читатели без знания Архива ощущают нехватку контекста." },
+  ]},
+  { planet:"Дроминад (продолжение)", color:"#639922", books:[
+    { title:"Isles of the Emberdark", meta:"2025 · роман · включает «Шестой из сумрака» флешбеками", type:"novel" },
+  ]},
+];
+
+var ADVICE = [
+  { planet:"Лучший старт для новичков", color:"#c9a96e", books:[
+    { title:"Пепел и сталь", meta:"Рождённый туманом #1 · лучшая точка входа", type:"novel",
+      tip:"Идеальное начало: хейст-история с чёткой магией, живыми героями и отличным темпом." },
+    { title:"Источник вознесения", meta:"Рождённый туманом #2", type:"novel" },
+    { title:"Герой веков", meta:"Рождённый туманом #3", type:"novel" },
+  ]},
+  { planet:"Альтернативный старт — самостоятельные романы", color:"#8b9fc7", books:[
+    { title:"Убийца войн", meta:"Налтис · бесплатно на сайте автора", type:"novel",
+      tip:"Самостоятельный роман, хорошая точка входа. Позже важен для понимания Архива Буресвета." },
+    { title:"Локон с Изумрудного моря", meta:"Лумар · лёгкий и тёплый тон", type:"novel",
+      tip:"Необычно светлый для Сандерсона. Хорош для тех, кто не уверен в жанре." },
+  ]},
+  { planet:"Сель (после Рождённого туманом)", color:"#6ec9a1", books:[
+    { title:"Элантрис", meta:"2005 · первый роман автора", type:"novel",
+      tip:"Дебют, слабее зрелых работ. Лучше читать уже зная стиль автора." },
+    { title:"Надежда Элантриса", meta:"рассказ · дополнение к роману", type:"short", tag:"story" },
+    { title:"Душа императора", meta:"2012 · повесть · одна из лучших в малой форме", type:"short", tag:"novella",
+      tip:"Многие считают лучшей вещью Сандерсона в малой форме. Можно читать в любой момент." },
+  ]},
+  { planet:"Талдаин (в любом месте)", color:"#c9b46e", books:[
+    { title:"Белый песок т. 1–3", meta:"графический роман", type:"novel", tag:"graphic",
+      tip:"Необязателен для понимания остального Космере, но расширяет картину мира." },
+  ]},
+  { planet:"Скадриаль — Эра 2 (после Эры 1)", color:"#6ec9c9", books:[
+    { title:"Одиннадцатый металл", meta:"рассказ · приквел, перед Пепла и стали", type:"short", tag:"story" },
+    { title:"Сплав закона", meta:"Двурождённые #1", type:"novel" },
+    { title:"Алломант Джек и ямы Эльтании", meta:"рассказ · между Двурождёнными #1 и #2", type:"short", tag:"story",
+      tip:"Юмористический газетный рассказ. Лёгкое чтение между книгами Эры 2." },
+    { title:"Тени истины", meta:"Двурождённые #2", type:"novel" },
+    { title:"Браслеты скорби", meta:"Двурождённые #3", type:"novel" },
+    { title:"Тайная история", meta:"повесть", type:"short", tag:"novella",
+      note:"Строго после «Браслетов скорби» — спойлер к концовке." },
+    { title:"Утраченный металл", meta:"Двурождённые #4", type:"novel" },
+  ]},
+  { planet:"Сборник вместо отдельных новелл (опционально)", color:"#c9c96e", books:[
+    { title:"Космере. Тайная история (Arcanum Unbounded)", meta:"2016 · сборник всех мелких форм", type:"novel", tag:"collection", isColl:true,
+      tip:"Заменяет все новеллы и рассказы. Удобно читать после Эры 2 и перед Архивом, или после всего Архива.",
+      contents:"Душа императора · Надежда Элантриса · Одиннадцатый металл · Алломант Джек · Тайная история · отрывок Белый песок · Тени Тишины · Шестой из сумрака · Гранетанцор\n+ очерки о каждой планете от лица Крисс" },
+  ]},
+  { planet:"Тренодия (в любом месте)", color:"#888780", books:[
+    { title:"Тени Тишины в Лесах Ада", meta:"рассказ", type:"short", tag:"story" },
+  ]},
+  { planet:"Дроминад", color:"#97c459", books:[
+    { title:"Шестой из сумрака", meta:"рассказ · до Isles of the Emberdark", type:"short", tag:"story",
+      note:"Читать до «Isles of the Emberdark» — входит в роман флешбеками." },
+    { title:"Isles of the Emberdark", meta:"2025 · роман", type:"novel" },
+  ]},
+  { planet:"Рошар — Архив Буресвета", color:"#a88bc9", books:[
+    { title:"Путь королей", meta:"Архив Буресвета #1", type:"novel",
+      tip:"Медленный старт — первые ~200 страниц разгоняются. Терпение окупается." },
+    { title:"Слова сияния", meta:"Архив Буресвета #2", type:"novel" },
+    { title:"Гранетанцор", meta:"новелла · между #2 и #3", type:"short", tag:"novella",
+      note:"Читать перед «Давшим клятву»." },
+    { title:"Давший клятву", meta:"Архив Буресвета #3", type:"novel" },
+    { title:"Осколок зари", meta:"новелла · между #3 и #4", type:"short", tag:"novella",
+      note:"Читать перед «Ритмом войны»." },
+    { title:"Ритм войны", meta:"Архив Буресвета #4", type:"novel" },
+    { title:"Ветер и Правда", meta:"Архив Буресвета #5 · завершает первую дугу", type:"novel" },
+  ]},
+  { planet:"Секретные проекты (после Архива #5)", color:"#c98bb0", books:[
+    { title:"Локон с Изумрудного моря", meta:"Лумар · самый лёгкий тон", type:"novel" },
+    { title:"Юми и укротитель кошмаров", meta:"Комаси", type:"novel" },
+    { title:"Озарённый Солнцем", meta:"Песнопение · тесно связан с Архивом", type:"novel",
+      tip:"Читатели без знания Архива ощущают нехватку контекста. Лучше после #5." },
+  ]},
+];
+
+var mode = "chrono";
+var filter = "all";
+var collapsed = {};
+
+function makeBook(b, n) {
+  var div = document.createElement("div");
+  div.className = "book" + (b.isColl ? " is-coll" : "");
+
+  var num = document.createElement("span");
+  num.className = "book-num";
+  num.textContent = n < 10 ? "0" + n : "" + n;
+
+  var body = document.createElement("div");
+  body.className = "book-body";
+
+  var title = document.createElement("div");
+  title.className = "book-title";
+  title.textContent = b.title;
+
+  var meta = document.createElement("div");
+  meta.className = "book-meta";
+  meta.textContent = b.meta;
+
+  body.appendChild(title);
+  body.appendChild(meta);
+
+  if (b.note) {
+    var note = document.createElement("div");
+    note.className = "book-note";
+    note.textContent = b.note;
+    body.appendChild(note);
+  }
+  if (b.tip) {
+    var tip = document.createElement("div");
+    tip.className = "book-tip";
+    tip.textContent = b.tip;
+    body.appendChild(tip);
+  }
+  if (b.contents) {
+    var cont = document.createElement("div");
+    cont.className = "book-contents";
+    cont.innerHTML = b.contents.replace(/\n/g, "<br>");
+    body.appendChild(cont);
+  }
+  if (b.tag) {
+    var tags = document.createElement("div");
+    tags.className = "tags";
+    var tag = document.createElement("span");
+    tag.className = "tag tag-" + b.tag;
+    tag.textContent = TL[b.tag];
+    tags.appendChild(tag);
+    body.appendChild(tags);
+  }
+
+  div.appendChild(num);
+  div.appendChild(body);
+  return div;
+}
+
+function render() {
+  var data = mode === "chrono" ? CHRONO : ADVICE;
+  var main = document.getElementById("main");
+  main.innerHTML = "";
+  var n = 0;
+
+  for (var pi = 0; pi < data.length; pi++) {
+    var planet = data[pi];
+    var filtered = [];
+    for (var bi = 0; bi < planet.books.length; bi++) {
+      var b = planet.books[bi];
+      if (filter === "all") filtered.push(b);
+      else if (filter === "novel" && b.type === "novel") filtered.push(b);
+      else if (filter === "short" && b.type === "short") filtered.push(b);
+    }
+    if (!filtered.length) continue;
+
+    var key = mode + "_" + pi;
+    if (collapsed[key] === undefined) collapsed[key] = false;
+
+    var sec = document.createElement("div");
+    sec.className = "planet-section";
+
+    var hdr = document.createElement("div");
+    hdr.className = "planet-header";
+
+    var dot = document.createElement("div");
+    dot.className = "planet-dot";
+    dot.style.background = planet.color;
+
+    var name = document.createElement("span");
+    name.className = "planet-name";
+    name.textContent = planet.planet;
+
+    var line = document.createElement("div");
+    line.className = "planet-line";
+
+    var arrow = document.createElement("span");
+    arrow.className = "planet-arrow" + (collapsed[key] ? "" : " open");
+    arrow.textContent = "▾";
+    arrow.id = "arr_" + key;
+
+    hdr.appendChild(dot);
+    hdr.appendChild(name);
+    hdr.appendChild(line);
+    hdr.appendChild(arrow);
+
+    var booksEl = document.createElement("div");
+    booksEl.className = "books";
+    booksEl.id = "bks_" + key;
+    booksEl.style.display = collapsed[key] ? "none" : "flex";
+
+    for (var fi = 0; fi < filtered.length; fi++) {
+      n++;
+      booksEl.appendChild(makeBook(filtered[fi], n));
+    }
+
+    (function(k) {
+      hdr.addEventListener("click", function() {
+        collapsed[k] = !collapsed[k];
+        var arr = document.getElementById("arr_" + k);
+        var bks = document.getElementById("bks_" + k);
+        if (collapsed[k]) {
+          arr.classList.remove("open");
+          bks.style.display = "none";
+        } else {
+          arr.classList.add("open");
+          bks.style.display = "flex";
+        }
+      });
+    })(key);
+
+    sec.appendChild(hdr);
+    sec.appendChild(booksEl);
+
+    var dv = document.createElement("div");
+    dv.className = "divider";
+    sec.appendChild(dv);
+
+    main.appendChild(sec);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  var btnChrono = document.getElementById("btn-chrono");
+  var btnAdvice = document.getElementById("btn-advice");
+  var modeDesc = document.getElementById("mode-desc");
+  var fcAll = document.getElementById("fc-all");
+  var fcNovel = document.getElementById("fc-novel");
+  var fcShort = document.getElementById("fc-short");
+
+  btnChrono.addEventListener("click", function() {
+    mode = "chrono";
+    btnChrono.classList.add("active");
+    btnAdvice.classList.remove("active");
+    modeDesc.textContent = "порядок по внутренней хронологии миров";
+    render();
+  });
+
+  btnAdvice.addEventListener("click", function() {
+    mode = "advice";
+    btnAdvice.classList.add("active");
+    btnChrono.classList.remove("active");
+    modeDesc.textContent = "рекомендованный порядок для читателя";
+    render();
+  });
+
+  fcAll.addEventListener("click", function() {
+    filter = "all";
+    fcAll.classList.add("active"); fcNovel.classList.remove("active"); fcShort.classList.remove("active");
+    render();
+  });
+  fcNovel.addEventListener("click", function() {
+    filter = "novel";
+    fcNovel.classList.add("active"); fcAll.classList.remove("active"); fcShort.classList.remove("active");
+    render();
+  });
+  fcShort.addEventListener("click", function() {
+    filter = "short";
+    fcShort.classList.add("active"); fcAll.classList.remove("active"); fcNovel.classList.remove("active");
+    render();
+  });
+
+  render();
+});
+</script>
+</body>
+</html>
